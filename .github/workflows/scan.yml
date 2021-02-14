@@ -1,16 +1,29 @@
 name: Scan
 on: [push, pull_request]
 jobs:
-  scan:
-    name: Scan
-    runs-on: ubuntu-latest
+  build:
+    name: Build
+    runs-on: ubuntu-18.04
     steps:
-    - uses: actions/checkout@v1
-    - name: Test
-      run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/tmp/.cache/ aquasec/trivy:0.10.0 alpine:3.10.2
-    - name: Build
-      run: docker build -t trivy-ci-test:1.2.3 .
-    - name: Scan
-      uses: docker://aquasec/trivy
-      with:
-        args: --severity CRITICAL --no-progress trivy-ci-test:1.2.3
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
+      - name: Run Trivy vulnerability scanner
+        uses: rahul2393/trivy-action@scan-type
+        with:
+          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
+          exit-code: '0'
+          ignore-unfixed: 'true'
+          vuln-type: 'os,library'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: 'trivy-results.sarif'
