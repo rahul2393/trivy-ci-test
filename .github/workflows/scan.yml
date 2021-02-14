@@ -8,22 +8,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Build an image from Dockerfile
-        run: |
-          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
       - name: Run Trivy vulnerability scanner
         uses: rahul2393/trivy-action@scan-type
         with:
-          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
+          scan-type: 'fs'
+          scan-ref: '/github/workspace/'
           exit-code: '0'
           ignore-unfixed: 'true'
           vuln-type: 'os,library'
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'trivy-results.sarif'
+          output: 'trivy-fs-results.sarif'
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'trivy-fs-results.sarif'
