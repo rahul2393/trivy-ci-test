@@ -12,7 +12,6 @@ jobs:
         uses: rahul2393/trivy-action@scan-type
         with:
           scan-type: 'fs'
-          scan-ref: '/github/workspace/'
           exit-code: '0'
           ignore-unfixed: 'true'
           vuln-type: 'os,library'
